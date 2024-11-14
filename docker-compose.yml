@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  yolo-detection:
+    build: .
+    container_name: yolo_detection_container
+    volumes:
+      - .:/app
+    environment:
+      - ENV_FILE=.env
+    ports:
+      - "8100:8100"
