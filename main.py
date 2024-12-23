@@ -33,7 +33,8 @@ def detect_objects_in_video(model, video_path, output_path):
         ret, frame = cap.read()
         if not ret:
             break
-        results = model.predict(frame)
+        # Filtrar detecciones solo para ciertas clases
+        results = model.predict(frame, classes=[0, 2, 3, 5], conf=0.5)
         img_with_boxes = results[0].plot()
         out.write(img_with_boxes)
 
@@ -41,14 +42,15 @@ def detect_objects_in_video(model, video_path, output_path):
     out.release()
     print(f"Video saved to {output_path}")
 
+
 def main():
     model = load_model()
     # image_path = os.getenv('IMAGE_PATH', '/app/image.png')
     # output_path = '/app/detected_objects.png'
     # detect_objects(model, image_path, output_path)
 
-    video_path = os.getenv('VIDEO_PATH', '/app/data/input/DJI_20241111152049_0053_D.MP4')
-    output_path = '/app/data/output/detected_objects.mp4'
+    video_path = os.getenv('VIDEO_PATH', '/app/data/DJI_20241111152049_0053_D2.mp4')
+    output_path = '/app/data/output/detected_objects3.mp4'
     detect_objects_in_video(model, video_path, output_path)
 
 if __name__ == "__main__":
