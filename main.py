@@ -47,7 +47,7 @@ def main():
     # output_path = '/app/detected_objects.png'
     # detect_objects(model, image_path, output_path)
 
-    video_path = os.getenv('VIDEO_PATH', '/app/data/input/DJI_20241111152049_0053_D.MP4')
+    video_path = os.getenv('VIDEO_PATH', '/app/data/DJI_20241111152049_0053_D2.MP4')
     output_path = '/app/data/output/detected_objects.mp4'
     detect_objects_in_video(model, video_path, output_path)
 
