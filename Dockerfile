@@ -4,9 +4,7 @@ FROM python:3.8-slim
 # Instala las dependencias necesarias para OpenCV
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
-    libglib2.0-0 \
-    git && \
-    apt-get clean
+    libglib2.0-0
 
 # Establece el directorio de trabajo en el contenedor
 WORKDIR /app
@@ -14,16 +12,6 @@ WORKDIR /app
 # Copia el archivo requirements.txt y lo instala
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Clonar el repositorio de Sort
-RUN git clone https://github.com/abewley/sort.git /app/sort
-
-# Instalar las dependencias locales de Sort (si las necesita)
-WORKDIR /app/sort
-RUN pip install numpy opencv-python
-
-# Volver al directorio principal del proyecto
-WORKDIR /app
 
 # Copia el contenido del proyecto a /app
 COPY . .
