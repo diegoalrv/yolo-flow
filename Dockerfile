@@ -11,7 +11,7 @@ WORKDIR /app
 
 # Copia el archivo requirements.txt y lo instala
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install -r requirements.txt
 
 # Copia el contenido del proyecto a /app
 COPY . .
