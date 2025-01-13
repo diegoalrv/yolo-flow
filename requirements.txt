@@ -6,6 +6,4 @@ gitdb
 gitpython
 setuptools==70.3.0
 smmap
-filterpy
-deep-sort-realtime
 scipy
