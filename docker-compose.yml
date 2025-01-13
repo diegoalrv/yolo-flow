@@ -1,11 +1,12 @@
-version: '3.8'
+version: "3.8"
 
 services:
   yolo-detection:
     build: .
     container_name: yolo_detection_container
     volumes:
-      - .:/app
+      - ./data:/app/data
+      - ./output:/app/output
     environment:
       - ENV_FILE=.env
     ports:

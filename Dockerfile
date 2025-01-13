@@ -1,20 +1,25 @@
-# Utiliza una imagen base de Python
+
 FROM python:3.8-slim
 
-# Instala las dependencias necesarias para OpenCV
+# Instalar dependencias del sistema necesarias para OpenCV y Git
 RUN apt-get update && apt-get install -y \
+    git \
     libgl1-mesa-glx \
-    libglib2.0-0
+    libglib2.0-0 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
-# Establece el directorio de trabajo en el contenedor
 WORKDIR /app
 
-# Copia el archivo requirements.txt y lo instala
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
 
-# Copia el contenido del proyecto a /app
+#RUN pip install --no-cache-dir -r requirements.txt
+
+# Asegurar permisos para las carpetas de datos y resultados
+RUN mkdir -p /app/data /app/output && chmod -R 777 /app/data /app/output
+
+# Copiar el resto de los archivos del proyecto
 COPY . .
 
-# Comando para ejecutar el script principal
-CMD ["python", "main.py"]
+# Comando por defecto para ejecutar el modelo o pruebas
+CMD ["python", "/app/main.py"]
