@@ -1,0 +1,48 @@
+1. Descargar el dataset:
+train: https://drive.usercontent.google.com/download?id=1a2oHjcEcwXP8oUF95qiwrqzACb2YlUhn&export=download&authuser=0&confirm=t&uuid=613087e0-b514-4b34-b605-64fbf147709a&at=AIrpjvNoUiezm3KnZWn7TXIW6N1l%3A1736731566799
+
+val: https://drive.usercontent.google.com/download?id=1bxK5zgLn0_L8x276eKkuYA_FzwCIjb59&export=download&authuser=0&confirm=t&uuid=c5bfdbb1-55da-40eb-9257-c412a0a06f8c&at=AIrpjvOCRRIotoguTKJq_iBL0GQa%3A1736731530498
+
+2. Agregar carpetas en data.
+3. Revisar ajustes de codigo
+4. Hacer conversion de archivos con el .py
+5. Entrenar yolo con VisDrone 
+docker exec -it yolo_detection_container yolo train data=visdrone.yaml model=yolov10m.pt epochs=50 imgsz=640
+
+6. Levantar el contenedor docker-compose up -d --build
+7. Dentro del contenedor, docker exec -it yolo_detection_container python /app/main.py
+
+
+
+
+
+PARA USAR LA GPU
+1. Debo ajustar el docker-compose.yml
+services:
+  yolo-detection:
+    build: .
+    container_name: yolo_detection_container
+    volumes:
+      - ./data:/app/data
+      - ./output:/app/output
+    environment:
+      - ENV_FILE=.env
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    runtime: nvidia
+2. Instalar el runtime 
+sudo apt-get install -y nvidia-container-toolkit
+sudo systemctl restart docker
+
+3. Verificar instalacion
+docker run --rm --gpus all nvidia/cuda:11.8.0-base nvidia-smi
+
+4. Al levantar el contenedor, verificar si tiene acceso
+docker exec -it yolo_detection_container nvidia-smi
+5. Entrenamiento  (puedo ajustar el batch hasta 32)
+docker exec -it yolo_detection_container yolo train data=visdrone.yaml model=yolov10m.pt epochs=50 imgsz=640 batch=8 workers=8 device=0
