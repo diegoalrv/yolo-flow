@@ -13,7 +13,7 @@ WORKDIR /app
 
 COPY requirements.txt .
 
-#RUN pip install --no-cache-dir -r requirements.txt
+#RUN pip install -r requirements.txt
 
 # Asegurar permisos para las carpetas de datos y resultados
 RUN mkdir -p /app/data /app/output && chmod -R 777 /app/data /app/output
