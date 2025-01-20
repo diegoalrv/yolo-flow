@@ -1,72 +1,92 @@
 import os
 import cv2
 
-def convert_visdrone_to_yolo(input_dir, output_dir, img_dir):
+def process_annotations(input_dir, output_dir, img_dir):
     os.makedirs(output_dir, exist_ok=True)
+
     for annotation_file in os.listdir(input_dir):
         if annotation_file.endswith('.txt'):
             input_path = os.path.join(input_dir, annotation_file)
             output_path = os.path.join(output_dir, annotation_file)
 
-            with open(input_path, 'r') as f_in, open(output_path, 'w') as f_out:
-                for line in f_in:
-                    fields = line.strip().split(',')
-                    
-                    # Verificar que la línea tenga al menos 7 campos
-                    if len(fields) < 7:
-                        print(f"Formato incorrecto en {annotation_file}: {line.strip()}")
-                        continue
+            print(f"\n[INFO] Procesando archivo: {input_path}")
 
-                    class_id = fields[0]
-                    xmin = float(fields[1])
-                    ymin = float(fields[2])
-                    width = float(fields[3])
-                    height = float(fields[4])
+            # Verificar que el archivo tiene contenido
+            if os.path.getsize(input_path) == 0:
+                print(f"[WARNING] Archivo vacío detectado: {input_path}")
+                continue
 
-                    # Ignorar anotaciones marcadas como "ignored"
-                    if int(fields[6]) == 1:
-                        print(f"Línea ignorada en {annotation_file}: {line.strip()}")
-                        continue
+            with open(input_path, 'r') as f_in:
+                content = f_in.readlines()
 
-                    # Obtener dimensiones de la imagen
-                    img_name = annotation_file.replace('.txt', '.jpg')
-                    img_path = os.path.join(img_dir, img_name)
+                if not content:
+                    print(f"[WARNING] Archivo sin líneas válidas: {input_path}")
+                    continue
 
-                    if not os.path.exists(img_path):
-                        print(f"Imagen no encontrada: {img_path}")
-                        continue
+            # Leer la imagen correspondiente
+            img_name = annotation_file.replace('.txt', '.jpg')
+            img_path = os.path.join(img_dir, img_name)
 
-                    try:
-                        img_width, img_height = get_image_dimensions(img_path)
-                    except ValueError as e:
-                        print(e)
-                        continue
+            if not os.path.exists(img_path):
+                print(f"[ERROR] Imagen no encontrada: {img_path}")
+                continue
 
-                    # Convertir a formato YOLO
-                    x_center = (xmin + width / 2) / img_width
-                    y_center = (ymin + height / 2) / img_height
-                    width /= img_width
-                    height /= img_height
+            img = cv2.imread(img_path)
 
-                    f_out.write(f"{class_id} {x_center} {y_center} {width} {height}\n")
+            if img is None:
+                print(f"[ERROR] No se pudo leer la imagen: {img_path}")
+                continue
 
-            print(f"Archivo convertido: {output_path}")
+            print(f"[INFO] Dimensiones de la imagen: {img.shape}")
 
-def get_image_dimensions(img_path):
-    img = cv2.imread(img_path)
-    if img is None:
-        raise ValueError(f"No se pudo leer la imagen: {img_path}")
-    return img.shape[1], img.shape[0]
+            # Verificar datos y realizar conversión
+            try:
+                with open(input_path, 'r') as f_in, open(output_path, 'w') as f_out:  # Crear archivo en carpeta de salida
+                    for line in f_in:
+                        fields = line.strip().split(',')
+                        if len(fields) < 8:
+                            print(f"[ERROR] Línea corrupta en {input_path}: {line}")
+                            continue
 
-# Rutas locales
-convert_visdrone_to_yolo(
-    input_dir='data/labels/train', 
-    output_dir='data/labels/train', 
-    img_dir='data/images/train'
-)
+                        class_id = fields[0]
+                        xmin = float(fields[1])
+                        ymin = float(fields[2])
+                        width = float(fields[3])
+                        height = float(fields[4])
 
-convert_visdrone_to_yolo(
-    input_dir='data/labels/val', 
-    output_dir='data/labels/val', 
-    img_dir='data/images/val'
-)
+                        # Ignorar anotaciones marcadas como "ignored"
+                        if int(fields[6]) == 1:
+                            continue
+
+                        # Convertir a formato YOLO
+                        img_width, img_height = img.shape[1], img.shape[0]
+                        x_center = (xmin + width / 2) / img_width
+                        y_center = (ymin + height / 2) / img_height
+                        norm_width = width / img_width
+                        norm_height = height / img_height
+
+                        if any(v < 0 or v > 1 for v in [x_center, y_center, norm_width, norm_height]):
+                            print(f"[WARNING] Valores fuera de rango en {input_path}: {line}")
+                            continue
+
+                        f_out.write(f"{class_id} {x_center} {y_center} {norm_width} {norm_height}\n")
+
+                print(f"[INFO] Archivo convertido correctamente: {output_path}")
+            except Exception as e:
+                print(f"[ERROR] Error durante la conversión de {input_path}: {e}")
+
+if __name__ == "__main__":
+    # Rutas ajustadas
+    train_labels_dir = r"rutalabelstrain"
+    train_images_dir = r"rutaimagestrain"
+    train_output_dir = r"ruta\train_converted"
+
+    val_labels_dir = r"rutalabelsval"
+    val_images_dir = r"rutaimagesval"
+    val_output_dir = r"ruta\val_converted"
+
+    print("[INFO] Procesando etiquetas de entrenamiento...")
+    process_annotations(train_labels_dir, train_output_dir, train_images_dir)
+
+    print("\n[INFO] Procesando etiquetas de validación...")
+    process_annotations(val_labels_dir, val_output_dir, val_images_dir)
