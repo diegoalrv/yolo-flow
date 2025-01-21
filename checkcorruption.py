@@ -32,3 +32,27 @@ if __name__ == "__main__":
 
     print("[INFO] Filtrando clases no válidas en las etiquetas de validación...")
     filter_invalid_classes(val_labels_dir, allowed_classes)
+
+----------------------------------------------------------------------
+
+
+import os
+import cv2
+
+def check_images(image_dir):
+    for image_file in os.listdir(image_dir):
+        if image_file.endswith('.jpg'):
+            img_path = os.path.join(image_dir, image_file)
+            img = cv2.imread(img_path)
+            if img is None:
+                print(f"[ERROR] Imagen corrupta o inexistente: {img_path}")
+
+if __name__ == "__main__":
+    train_images_dir = r"images\train"
+    val_images_dir = r"images\val"
+
+    print("[INFO] Verificando imágenes de entrenamiento...")
+    check_images(train_images_dir)
+
+    print("[INFO] Verificando imágenes de validación...")
+    check_images(val_images_dir)
