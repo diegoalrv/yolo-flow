@@ -3,9 +3,6 @@ import cv2
 from ultralytics import YOLO
 
 def load_model():
-    """
-    Carga el modelo YOLO especificado.
-    """
     model = YOLO("yolov10m.pt")  # Ruta al modelo YOLO
     return model
 
@@ -22,7 +19,7 @@ def detect_objects_in_video(model, video_path, output_path):
             break
 
         # Realiza predicciones en el cuadro actual
-        results = model.predict(frame, classes=[0, 2, 3, 5], conf=0.5)
+        results = model.predict(frame, classes=[0, 2, 3, 5], conf=0.4)
         img_with_boxes = results[0].plot()  # Dibuja las cajas en el cuadro
         out.write(img_with_boxes)  # Guarda el cuadro procesado
 

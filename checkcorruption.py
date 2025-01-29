@@ -21,8 +21,8 @@ def filter_invalid_classes(input_dir, allowed_classes):
                 f_out.writelines(valid_lines)
 
 if __name__ == "__main__":
-    train_labels_dir = r"labels\train_converted"
-    val_labels_dir = r"labels\val_converted"
+    train_labels_dir = r"C:\Users\danie\Desktop\PRACTICA CITYLAB\Profesional\yolo-flow\data\labels\train"
+    val_labels_dir = r"C:\Users\danie\Desktop\PRACTICA CITYLAB\Profesional\yolo-flow\data\labels\val"
 
     # Índices de clases permitidas
     allowed_classes = [0, 4, 9, 10]  # person, car, bus, motorcycle
@@ -48,8 +48,8 @@ def check_images(image_dir):
                 print(f"[ERROR] Imagen corrupta o inexistente: {img_path}")
 
 if __name__ == "__main__":
-    train_images_dir = r"images\train"
-    val_images_dir = r"images\val"
+    train_images_dir = r"C:\Users\danie\Desktop\PRACTICA CITYLAB\Profesional\yolo-flow\data\images\train"
+    val_images_dir = r"C:\Users\danie\Desktop\PRACTICA CITYLAB\Profesional\yolo-flow\data\images\val"
 
     print("[INFO] Verificando imágenes de entrenamiento...")
     check_images(train_images_dir)
