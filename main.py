@@ -15,7 +15,7 @@ CLASS_NAMES = {
 }
 
 # Parámetros de rastreo
-MAX_DISTANCE = 80  # Incrementar distancia máxima permitida entre cuadros
+MAX_DISTANCE = 100  # Distancia máxima permitida entre cuadros para asociar objetos
 MAX_AGE = 5  # Cuadros que un objeto puede desaparecer antes de perder su ID
 MIN_HITS = 3  # Cuadros consecutivos necesarios para confirmar un objeto
 
@@ -93,12 +93,14 @@ def detect_and_track_objects(model, video_path, output_path):
         results = model.predict(frame, conf=0.6)
         detections = []
 
-        # Extraer detecciones
+        # Extraer detecciones válidas
         for box in results[0].boxes:
             x1, y1, x2, y2 = box.xyxy[0].tolist()  # Coordenadas del cuadro
             conf = box.conf[0].item()  # Confianza de la detección
             cls = int(box.cls[0].item())  # Clase del objeto
-            detections.append([x1, y1, x2, y2, conf, cls])
+            # Filtrar objetos desconocidos
+            if cls in CLASS_NAMES:
+                detections.append([x1, y1, x2, y2, conf, cls])
 
         # Convertir a NumPy
         detections = np.array(detections)
@@ -107,7 +109,7 @@ def detect_and_track_objects(model, video_path, output_path):
         object_tracker = assign_ids(detections, object_tracker)
 
         # Dibujar cuadros y etiquetas
-        for object_id, obj in object_tracker.items():
+        for obj in object_tracker.values():
             if obj['hits'] < MIN_HITS:
                 continue  # Ignorar objetos no confirmados
 
@@ -116,14 +118,18 @@ def detect_and_track_objects(model, video_path, output_path):
             conf_formatted = f"{conf:.1f}".replace('.', ',')  # Formatear porcentaje con coma
             cls_name = CLASS_NAMES.get(obj['cls'], "Unknown")  # Nombre de la clase
 
-            # Dibujar cuadro delimitador
-            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            # Dibujar cuadro delimitador en rojo grueso
+            cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 0, 255), 6)  # Color rojo, grosor 6
 
-            # Dibujar texto con ID, tipo de objeto y porcentaje
-            cv2.putText(frame, f"ID: {object_id}", (x1, y1 - 40),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
-            cv2.putText(frame, f"{cls_name}, {conf_formatted}%", (x1, y1 - 10),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1.0, (0, 255, 0), 2)
+            # Dibujar fondo para texto
+            label = f"{cls_name}, {conf_formatted}%"
+            label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 1.5, 3)
+            label_width, label_height = label_size
+            cv2.rectangle(frame, (x1, y1 - label_height - 10), (x1 + label_width, y1), (0, 0, 255), -1)  # Fondo rojo
+
+            # Dibujar texto en blanco sobre el fondo
+            cv2.putText(frame, label, (x1, y1 - 10),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1.5, (255, 255, 255), 3)  # Texto blanco grande
 
         out.write(frame)  # Escribir cuadro procesado en el video de salida
 
@@ -133,8 +139,8 @@ def detect_and_track_objects(model, video_path, output_path):
 
 def main():
     model = load_model()
-    video_path = os.getenv('VIDEO_PATH', '/app/data/DJI_20241111152049_0053_D2.mp4')
-    output_path = '/app/data/output/detected_objects_1.mp4'
+    video_path = os.getenv('VIDEO_PATH','/app/data/DJI_20241111152049_0053_D2.mp4')
+    output_path = '/app/data/output/detectedObjects_1.mp4'
     detect_and_track_objects(model, video_path, output_path)
 
 if __name__ == "__main__":
