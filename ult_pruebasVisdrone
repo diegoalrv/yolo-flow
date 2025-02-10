@@ -1,0 +1,47 @@
+# Librerias
+
+%pip install ultralytics
+
+from ultralytics import YOLO, checks
+from collections import defaultdict
+
+checks()
+
+model = YOLO('citylab.pt')
+
+clases_a_detectar = [0, 3, 8, 9]  # 0 = pedestrian, 3 = car, 8 = bus, 9 = motor
+
+objetos_unicos = set()
+contador_clases = defaultdict(int)
+
+results = model.track(
+    source="Trafico_india.mp4",
+    conf=0.4,
+    iou=0.4,
+    save=True,
+    show=True,
+    project="output",
+    name="detectedObjects_#7",
+    classes=clases_a_detectar,
+    tracker="bytetrack.yaml",
+    persist=True,
+    show_labels=True,
+    show_conf=True,
+)
+
+for frame in results:
+    for obj in frame.boxes:
+        track_id = int(obj.id[0]) if obj.id is not None else None
+        class_id = int(obj.cls[0])
+
+        if track_id and track_id not in objetos_unicos:
+            objetos_unicos.add(track_id)
+            contador_clases[class_id] += 1
+
+print("\n🔹 Conteo final de objetos detectados:")
+for class_id, count in contador_clases.items():
+    print(f"{model.names[class_id]}: {count}")
+
+print("\n✅ Procesamiento completado.")
+
+
