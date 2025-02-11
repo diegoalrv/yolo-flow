@@ -6,20 +6,17 @@ import cv2
 
 checks()
 
-def extraer_frame_inicial(video_path, output_path="frame_inicial.jpg", alpha=150):
+def extraer_frame_inicial(video_path, output_path="frame_inicial.jpg"):
     cap = cv2.VideoCapture(video_path)
-    ret, frame = cap.read() 
+    ret, frame = cap.read()  # Leer el primer frame
     if ret:
-        frame = cv2.flip(frame, 0)
-        frame_rgba = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
-        frame_rgba[:, :, 3] = alpha 
-        cv2.imwrite(output_path, frame)
+        cv2.imwrite(output_path, frame)  # Guardar la imagen
         print(f"📸 Frame inicial guardado en '{output_path}'")
     else:
         print("⚠️ No se pudo extraer el frame inicial.")
     cap.release()
 
-video_path = "data\DJI_20241111152049_0053_D2.mp4"
+video_path = "data\DJI_20241111172713_0057_D2.mp4"
 extraer_frame_inicial(video_path)
 
 model = YOLO('yolov8_50epochs.pt')
