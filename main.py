@@ -19,7 +19,7 @@ video_path = "DJI_20241111152049_0053_D3"
 extraer_frame_inicial(video_path)
 
 model = YOLO('yolov8_50epochs.pt')
-
+#{0: 'pedestrian', 1: 'people', 2: 'bicycle', 3: 'car', 4: 'van', 5: 'truck', 6: 'tricycle', 7: 'awning-tricycle', 8: 'bus', 9: 'motor'}
 clases_a_detectar = [0, 3, 8, 9]
 
 objetos_unicos = {}
