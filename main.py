@@ -1,55 +1,59 @@
-import os
-import cv2
-import torch
-from ultralytics import YOLO
+from ultralytics import YOLO, checks
+from collections import defaultdict
+import csv
 
+checks()
 
-def load_model():
-    # model = torch.hub.load('ultralytics/yolov5', 'yolov5s')
-    model = YOLO("yolov10m.pt")
-    return model
+#Procesamiento
+model = YOLO('yolov8_50epochs.pt')
+print(model.names)
+#{0: 'pedestrian', 1: 'people', 2: 'bicycle', 3: 'car', 4: 'van', 5: 'truck', 6: 'tricycle', 7: 'awning-tricycle', 8: 'bus', 9: 'motor'}
+clases_a_detectar = [0, 3, 8, 9] 
 
-def detect_objects(model, image_path, output_path):
-    img = cv2.imread(image_path)
-    results = model.predict(img, classes=[2])
-    print(results)
+objetos_unicos = {}
+contador_clases = defaultdict(int)
 
-    # Obtiene la imagen con las detecciones
-    img_with_boxes = results[0]
-    print(type(img_with_boxes))
-    print(img_with_boxes)
-    # Guarda la imagen con las detecciones
-    # cv2.imwrite(output_path, img_with_boxes)
-    img_with_boxes.save(output_path)
-    print(f"Image saved to {output_path}")
+#CSV para guardar información de coordenadas
+with open("detecciones.csv", mode="w", newline="") as file:
+    writer = csv.writer(file)
+    writer.writerow(["Frame", "Clase", "ID", "Xmin", "Ymin", "Xmax", "Ymax"])  # Encabezado mejorado
 
-def detect_objects_in_video(model, video_path, output_path):
-    cap = cv2.VideoCapture(video_path)
-    frame_width = int(cap.get(3))
-    frame_height = int(cap.get(4))
-    out = cv2.VideoWriter(output_path, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (frame_width, frame_height))
+    results = model.track(
+        source="data\DJI_20241111172713_0057_D2.mp4",
+        conf=0.4,
+        iou=0.5,
+        save=True,
+        show=True,
+        project="output",
+        name="Resultados_detecciones#1",
+        classes=clases_a_detectar,
+        tracker="bytetrack.yaml",
+        persist=True,
+        show_labels=True,
+        show_conf=True,
+    )
 
-    while True:
-        ret, frame = cap.read()
-        if not ret:
-            break
-        results = model.predict(frame)
-        img_with_boxes = results[0].plot()
-        out.write(img_with_boxes)
+    id_counter = 1  
+    frame_number = 0  
 
-    cap.release()
-    out.release()
-    print(f"Video saved to {output_path}")
+    for frame in results:
+        frame_number += 1  
+        for obj in frame.boxes:
+            original_id = int(obj.id[0]) if obj.id is not None else None
+            class_id = int(obj.cls[0])
+            coords = obj.xyxy[0].tolist()
+            if original_id not in objetos_unicos:
+                objetos_unicos[original_id] = id_counter
+                id_counter += 1
+                contador_clases[class_id] += 1 
+            new_id = objetos_unicos[original_id]
 
-def main():
-    model = load_model()
-    # image_path = os.getenv('IMAGE_PATH', '/app/image.png')
-    # output_path = '/app/detected_objects.png'
-    # detect_objects(model, image_path, output_path)
+            print(f"🔹 Frame: {frame_number}, Clase: {model.names[class_id]}, ID: {new_id}, Coordenadas: {coords}")
 
-    video_path = os.getenv('VIDEO_PATH', '/app/data/input/DJI_20241111152049_0053_D.MP4')
-    output_path = '/app/data/output/detected_objects.mp4'
-    detect_objects_in_video(model, video_path, output_path)
+            writer.writerow([frame_number, model.names[class_id], new_id, *coords])  #CSV
 
-if __name__ == "__main__":
-    main()
+print("\n🔹 Conteo final de objetos detectados:")
+for class_id, count in contador_clases.items():
+    print(f"{model.names[class_id]}: {count}")
+
+print("\n✅ Procesamiento completado. Las coordenadas se han guardado en 'detecciones.csv'.")
