@@ -4,30 +4,53 @@
 from ultralytics import YOLO, checks
 from collections import defaultdict
 import csv
+import cv2
 
 checks()
 
-# Procesamiento
-model = YOLO('citylab.pt')
+# Función para extraer el primer frame del video
+def extraer_frame_inicial(video_path, output_path="frame_inicial.jpg"):
+    cap = cv2.VideoCapture(video_path)
+    ret, frame = cap.read()  # Leer el primer frame
+    if ret:
+        cv2.imwrite(output_path, frame)  # Guardar la imagen
+        print(f"📸 Frame inicial guardado en '{output_path}'")
+    else:
+        print("⚠️ No se pudo extraer el frame inicial.")
+    cap.release()
 
-clases_a_detectar = [0, 3, 8, 9]  # 0 = pedestrian, 3 = car, 8 = bus, 9 = motor
+# Ruta del video
+video_path = "Prueba1.mp4"
 
+# Extraer y guardar el primer frame
+extraer_frame_inicial(video_path)
+
+# Cargar modelo YOLO
+model = YOLO('yolov8_50epochs.pt')
+
+print(model.names)
+
+# Clases a detectar (0 = pedestrian, 3 = car, 8 = bus, 9 = motor)
+clases_a_detectar = [0, 3, 8, 9]
+
+# Variables para rastrear objetos y contar detecciones
 objetos_unicos = {}
 contador_clases = defaultdict(int)
 
-# Archivo CSV para guardar coordenadas
-with open("detecciones.csv", mode="w", newline="") as file:
-    writer = csv.writer(file)
-    writer.writerow(["Frame", "Clase", "ID", "Xmin", "Ymin", "Xmax", "Ymax"])  # Encabezado mejorado
+# Crear y abrir archivo CSV con delimitador adecuado
+with open("detecciones_1.csv", mode="w", newline="") as file:
+    writer = csv.writer(file, delimiter=";")  # Usa ";" como separador de columnas
+    writer.writerow(["Frame", "Clase", "ID", "Xmin", "Ymin", "Xmax", "Ymax"])  # Encabezado
 
+    # Procesar video con YOLO
     results = model.track(
-        source="DJI_20241111130415_0049_D2.mp4",
-        conf=0.4,
-        iou=0.5,
+        source=video_path,
+        conf=0.4,  # Umbral de confianza
+        iou=0.5,  # Umbral de IoU
         save=True,
         show=True,
         project="output",
-        name="detectedObjects_#1",
+        name="detectedObjects_#2",
         classes=clases_a_detectar,
         tracker="bytetrack.yaml",
         persist=True,
@@ -35,31 +58,39 @@ with open("detecciones.csv", mode="w", newline="") as file:
         show_conf=True,
     )
 
-    id_counter = 1  # Inicializar ID desde 1
-    frame_number = 0  # Contador de frames
+    id_counter = 1  # Contador de IDs únicos
+    frame_number = 0  # Contador de frames procesados
 
+    # Recorrer cada frame en los resultados
     for frame in results:
-        frame_number += 1  # Incrementa el número de frame en cada iteración
+        frame_number += 1  # Incrementar el número de frame
+
         for obj in frame.boxes:
             original_id = int(obj.id[0]) if obj.id is not None else None
             class_id = int(obj.cls[0])
-            coords = obj.xyxy[0].tolist()  # Extraer coordenadas (xmin, ymin, xmax, ymax)
+            coords = obj.xyxy[0].tolist()  # Extraer coordenadas [xmin, ymin, xmax, ymax]
 
-            # Asignar un nuevo ID si es la primera vez que se detecta
+            # Asignar un nuevo ID si es la primera vez que se detecta el objeto
             if original_id not in objetos_unicos:
                 objetos_unicos[original_id] = id_counter
                 id_counter += 1
                 contador_clases[class_id] += 1  # Asegurar conteo correcto de clases
+
             new_id = objetos_unicos[original_id]
 
+            # Convertir coordenadas a strings con formato decimal adecuado
+            coords = [f"{c:.6f}" for c in coords]
+
+            # Guardar la detección en el CSV
+            writer.writerow([frame_number, model.names[class_id], new_id, *coords])
+
+            # Mostrar la detección en la consola
             print(f"🔹 Frame: {frame_number}, Clase: {model.names[class_id]}, ID: {new_id}, Coordenadas: {coords}")
 
-            writer.writerow([frame_number, model.names[class_id], new_id, *coords])  # Escribir en CSV
-
+# Mostrar conteo final de objetos detectados
 print("\n🔹 Conteo final de objetos detectados:")
 for class_id, count in contador_clases.items():
     print(f"{model.names[class_id]}: {count}")
 
 print("\n✅ Procesamiento completado. Las coordenadas se han guardado en 'detecciones.csv'.")
-
 
