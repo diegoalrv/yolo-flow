@@ -1,0 +1,18 @@
+path: /app/data
+train: images/train
+val: images/val
+
+nc: 10
+names:
+  [
+    "pedestrian",
+    "people",
+    "bicycle",
+    "car",
+    "van",
+    "truck",
+    "tricycle",
+    "awning-tricycle",
+    "bus",
+    "motor",
+  ]
