@@ -10,6 +10,7 @@ def extraer_frame_inicial(video_path, output_path="frame_inicial.jpg"):
     cap = cv2.VideoCapture(video_path)
     ret, frame = cap.read()  # Leer el primer frame
     if ret:
+        frame = cv2.flip(frame, 0)
         cv2.imwrite(output_path, frame)  # Guardar la imagen
         print(f"📸 Frame inicial guardado en '{output_path}'")
     else:
